@@ -1,0 +1,121 @@
+From 6bf86620d1a0992727d6246c718cbf686d64a656 Mon Sep 17 00:00:00 2001
+From: Arnaud Pouliquen <arnaud.pouliquen@foss.st.com>
+Date: Mon, 21 Jun 2021 14:58:00 +0200
+Subject: [PATCH] rpmsg: ctrl: Introduce new RPMSG_CREATE/RELEASE_DEV_IOCTL
+ controls
+
+Allow the user space application to create and release an rpmsg device
+by adding RPMSG_CREATE_DEV_IOCTL and RPMSG_RELEASE_DEV_IOCTL ioctrls to
+the /dev/rpmsg_ctrl interface
+
+The RPMSG_CREATE_DEV_IOCTL Ioctl can be used to instantiate a local rpmsg
+device.
+Depending on the back-end implementation, the associated rpmsg driver is
+probed and a NS announcement can be sent to the remote processor.
+
+The RPMSG_RELEASE_DEV_IOCTL allows the user application to release a
+rpmsg device created either by the remote processor or with the
+RPMSG_CREATE_DEV_IOCTL call.
+Depending on the back-end implementation, the associated rpmsg driver is
+removed and a NS destroy rpmsg can be sent to the remote processor.
+
+Suggested-by: Mathieu Poirier <mathieu.poirier@linaro.org>
+Signed-off-by: Arnaud Pouliquen <arnaud.pouliquen@foss.st.com>
+Reviewed-by: Mathieu Poirier <mathieu.poirier@linaro.org>
+---
+ drivers/rpmsg/rpmsg_ctrl.c | 36 ++++++++++++++++++++++++++++++++----
+ include/uapi/linux/rpmsg.h | 10 ++++++++++
+ 2 files changed, 42 insertions(+), 4 deletions(-)
+
+diff --git a/drivers/rpmsg/rpmsg_ctrl.c b/drivers/rpmsg/rpmsg_ctrl.c
+index f43b5e4dbb4c..107da70fdbaa 100644
+--- a/drivers/rpmsg/rpmsg_ctrl.c
++++ b/drivers/rpmsg/rpmsg_ctrl.c
+@@ -43,11 +43,13 @@ static DEFINE_IDA(rpmsg_minor_ida);
+  * @rpdev:	underlaying rpmsg device
+  * @cdev:	cdev for the ctrl device
+  * @dev:	device for the ctrl device
++ * @ctrl_lock:	serialize the ioctrls.
+  */
+ struct rpmsg_ctrldev {
+ 	struct rpmsg_device *rpdev;
+ 	struct cdev cdev;
+ 	struct device dev;
++	struct mutex ctrl_lock;
+ };
+ 
+ static int rpmsg_ctrldev_open(struct inode *inode, struct file *filp)
+@@ -76,9 +78,8 @@ static long rpmsg_ctrldev_ioctl(struct file *fp, unsigned int cmd,
+ 	void __user *argp = (void __user *)arg;
+ 	struct rpmsg_endpoint_info eptinfo;
+ 	struct rpmsg_channel_info chinfo;
+-
+-	if (cmd != RPMSG_CREATE_EPT_IOCTL)
+-		return -EINVAL;
++	struct rpmsg_device *rpdev;
++	int ret = 0;
+ 
+ 	if (copy_from_user(&eptinfo, argp, sizeof(eptinfo)))
+ 		return -EFAULT;
+@@ -88,7 +89,33 @@ static long rpmsg_ctrldev_ioctl(struct file *fp, unsigned int cmd,
+ 	chinfo.src = eptinfo.src;
+ 	chinfo.dst = eptinfo.dst;
+ 
+-	return rpmsg_chrdev_eptdev_create(ctrldev->rpdev, &ctrldev->dev, chinfo);
++	mutex_lock(&ctrldev->ctrl_lock);
++	switch (cmd) {
++	case RPMSG_CREATE_EPT_IOCTL:
++		ret = rpmsg_chrdev_eptdev_create(ctrldev->rpdev, &ctrldev->dev, chinfo);
++		break;
++
++	case RPMSG_CREATE_DEV_IOCTL:
++		rpdev = rpmsg_create_channel(ctrldev->rpdev, &chinfo);
++		if (!rpdev) {
++			dev_err(&ctrldev->dev, "failed to create %s channel\n", chinfo.name);
++			ret = -ENXIO;
++		}
++		break;
++
++	case RPMSG_RELEASE_DEV_IOCTL:
++		ret = rpmsg_release_channel(ctrldev->rpdev, &chinfo);
++		if (ret)
++			dev_err(&ctrldev->dev, "failed to release %s channel (%d)\n",
++				chinfo.name, ret);
++		break;
++
++	default:
++		ret = -EINVAL;
++	}
++	mutex_unlock(&ctrldev->ctrl_lock);
++
++	return ret;
+ };
+ 
+ static const struct file_operations rpmsg_ctrldev_fops = {
+@@ -125,6 +152,7 @@ static int rpmsg_ctrldev_probe(struct rpmsg_device *rpdev)
+ 	dev->parent = &rpdev->dev;
+ 	dev->class = rpmsg_class;
+ 
++	mutex_init(&ctrldev->ctrl_lock);
+ 	cdev_init(&ctrldev->cdev, &rpmsg_ctrldev_fops);
+ 	ctrldev->cdev.owner = THIS_MODULE;
+ 
+diff --git a/include/uapi/linux/rpmsg.h b/include/uapi/linux/rpmsg.h
+index f5ca8740f3fb..1637e68177d9 100644
+--- a/include/uapi/linux/rpmsg.h
++++ b/include/uapi/linux/rpmsg.h
+@@ -33,4 +33,14 @@ struct rpmsg_endpoint_info {
+  */
+ #define RPMSG_DESTROY_EPT_IOCTL	_IO(0xb5, 0x2)
+ 
++/**
++ * Instantiate a new local rpmsg service device.
++ */
++#define RPMSG_CREATE_DEV_IOCTL	_IOW(0xb5, 0x3, struct rpmsg_endpoint_info)
++
++/**
++ * Release a local rpmsg device.
++ */
++#define RPMSG_RELEASE_DEV_IOCTL	_IOW(0xb5, 0x4, struct rpmsg_endpoint_info)
++
+ #endif

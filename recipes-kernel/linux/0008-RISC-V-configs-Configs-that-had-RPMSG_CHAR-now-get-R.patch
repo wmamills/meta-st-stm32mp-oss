@@ -1,0 +1,43 @@
+From 3c3638be45aa2072f6df48f520c08090bb8e6627 Mon Sep 17 00:00:00 2001
+From: Arnaud Pouliquen <arnaud.pouliquen@foss.st.com>
+Date: Thu, 4 Nov 2021 10:55:22 +0100
+Subject: [PATCH] RISC-V: configs: Configs that had RPMSG_CHAR now get
+ RPMSG_CTRL
+
+In the patch "rpmsg: Move the rpmsg control device from rpmsg_char
+to rpmsg_ctrl", we split the rpmsg_char driver in two.
+By default give everyone who had the old driver enabled the rpmsg_ctrl
+driver too.
+
+Signed-off-by: Arnaud Pouliquen <arnaud.pouliquen@foss.st.com>
+Reviewed-by: Anup Patel <anup@brainfault.org>
+cc: linux-riscv@lists.infradead.org
+---
+ arch/riscv/configs/defconfig      | 1 +
+ arch/riscv/configs/rv32_defconfig | 1 +
+ 2 files changed, 2 insertions(+)
+
+diff --git a/arch/riscv/configs/defconfig b/arch/riscv/configs/defconfig
+index f120fcc43d0a..aaccb1e5f328 100644
+--- a/arch/riscv/configs/defconfig
++++ b/arch/riscv/configs/defconfig
+@@ -100,6 +100,7 @@ CONFIG_VIRTIO_BALLOON=y
+ CONFIG_VIRTIO_INPUT=y
+ CONFIG_VIRTIO_MMIO=y
+ CONFIG_RPMSG_CHAR=y
++CONFIG_RPMSG_CTRL=y
+ CONFIG_RPMSG_VIRTIO=y
+ CONFIG_EXT4_FS=y
+ CONFIG_EXT4_FS_POSIX_ACL=y
+diff --git a/arch/riscv/configs/rv32_defconfig b/arch/riscv/configs/rv32_defconfig
+index 8b56a7f1eb06..47e50c992c9c 100644
+--- a/arch/riscv/configs/rv32_defconfig
++++ b/arch/riscv/configs/rv32_defconfig
+@@ -92,6 +92,7 @@ CONFIG_VIRTIO_BALLOON=y
+ CONFIG_VIRTIO_INPUT=y
+ CONFIG_VIRTIO_MMIO=y
+ CONFIG_RPMSG_CHAR=y
++CONFIG_RPMSG_CTRL=y
+ CONFIG_RPMSG_VIRTIO=y
+ CONFIG_EXT4_FS=y
+ CONFIG_EXT4_FS_POSIX_ACL=y

@@ -14,6 +14,17 @@ SRC_URI += " \
            file://0001-tty-rpmsg-Fix-race-condition-releasing-tty-port.patch \
            file://0002-rpmsg-char-Fix-race-between-the-release-of-rpmsg_ctr.patch \
            file://0003-rpmsg-char-Fix-race-between-the-release-of-rpmsg_ept.patch \
+           file://0004-rpmsg-char-Export-eptdev-create-and-destroy-function.patch \
+           file://0005-rpmsg-Create-the-rpmsg-class-in-core-instead-of-in-r.patch \
+           file://0006-rpmsg-Move-the-rpmsg-control-device-from-rpmsg_char-.patch \
+           file://0007-arm-configs-Configs-that-had-RPMSG_CHAR-now-get-RPMS.patch \
+           file://0008-RISC-V-configs-Configs-that-had-RPMSG_CHAR-now-get-R.patch \
+           file://0009-arm64-defconfig-Config-that-had-RPMSG_CHAR-now-gets-.patch \
+           file://0010-rpmsg-Update-rpmsg_chrdev_register_device-function.patch \
+           file://0011-rpmsg-char-Refactor-rpmsg_chrdev_eptdev_create-funct.patch \
+           file://0012-rpmsg-char-Add-possibility-to-use-default-endpoint-o.patch \
+           file://0013-rpmsg-char-Introduce-the-rpmsg-raw-channel.patch \
+           file://0014-rpmsg-ctrl-Introduce-new-RPMSG_CREATE-RELEASE_DEV_IO.patch \
            "
 
 PV = "${LINUX_VERSION}"

@@ -1,0 +1,102 @@
+From 0eda25ae62cae691d1439ed044ce91dc9f693c1e Mon Sep 17 00:00:00 2001
+From: Arnaud Pouliquen <arnaud.pouliquen@foss.st.com>
+Date: Mon, 17 May 2021 19:15:31 +0200
+Subject: [PATCH] rpmsg: Update rpmsg_chrdev_register_device function
+
+The rpmsg_chrdev driver has been replaced by the rpmsg_ctrl driver
+for the /dev/rpmsg_ctrlX devices management. The reference for the
+driver override is now the rpmsg_ctrl.
+
+Update the rpmsg_chrdev_register_device function to reflect the update,
+and rename the function to use the rpmsg_ctrldev prefix.
+
+The platform drivers are updated accordingly.
+
+Signed-off-by: Arnaud Pouliquen <arnaud.pouliquen@foss.st.com>
+Reviewed-by: Mathieu Poirier <mathieu.poirier@linaro.org>
+Reviewed-by: Bjorn Andersson <bjorn.andersson@linaro.org>
+---
+ drivers/rpmsg/qcom_glink_native.c | 2 +-
+ drivers/rpmsg/qcom_smd.c          | 2 +-
+ drivers/rpmsg/rpmsg_ctrl.c        | 2 +-
+ drivers/rpmsg/rpmsg_internal.h    | 8 ++++----
+ drivers/rpmsg/virtio_rpmsg_bus.c  | 2 +-
+ 5 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/drivers/rpmsg/qcom_glink_native.c b/drivers/rpmsg/qcom_glink_native.c
+index 1030cfa80e04..cf2c057b738c 100644
+--- a/drivers/rpmsg/qcom_glink_native.c
++++ b/drivers/rpmsg/qcom_glink_native.c
+@@ -1715,7 +1715,7 @@ static int qcom_glink_create_chrdev(struct qcom_glink *glink)
+ 	rpdev->dev.parent = glink->dev;
+ 	rpdev->dev.release = qcom_glink_device_release;
+ 
+-	return rpmsg_chrdev_register_device(rpdev);
++	return rpmsg_ctrldev_register_device(rpdev);
+ }
+ 
+ struct qcom_glink *qcom_glink_native_probe(struct device *dev,
+diff --git a/drivers/rpmsg/qcom_smd.c b/drivers/rpmsg/qcom_smd.c
+index 540e027f08c4..cd623e3e8aa9 100644
+--- a/drivers/rpmsg/qcom_smd.c
++++ b/drivers/rpmsg/qcom_smd.c
+@@ -1113,7 +1113,7 @@ static int qcom_smd_create_chrdev(struct qcom_smd_edge *edge)
+ 	qsdev->rpdev.dev.parent = &edge->dev;
+ 	qsdev->rpdev.dev.release = qcom_smd_release_device;
+ 
+-	return rpmsg_chrdev_register_device(&qsdev->rpdev);
++	return rpmsg_ctrldev_register_device(&qsdev->rpdev);
+ }
+ 
+ /*
+diff --git a/drivers/rpmsg/rpmsg_ctrl.c b/drivers/rpmsg/rpmsg_ctrl.c
+index 963e6e81a83f..f43b5e4dbb4c 100644
+--- a/drivers/rpmsg/rpmsg_ctrl.c
++++ b/drivers/rpmsg/rpmsg_ctrl.c
+@@ -179,7 +179,7 @@ static struct rpmsg_driver rpmsg_ctrldev_driver = {
+ 	.probe = rpmsg_ctrldev_probe,
+ 	.remove = rpmsg_ctrldev_remove,
+ 	.drv = {
+-		.name = "rpmsg_chrdev",
++		.name = "rpmsg_ctrl",
+ 	},
+ };
+ 
+diff --git a/drivers/rpmsg/rpmsg_internal.h b/drivers/rpmsg/rpmsg_internal.h
+index 416316200bde..d4b23fd019a8 100644
+--- a/drivers/rpmsg/rpmsg_internal.h
++++ b/drivers/rpmsg/rpmsg_internal.h
+@@ -86,16 +86,16 @@ struct rpmsg_device *rpmsg_create_channel(struct rpmsg_device *rpdev,
+ int rpmsg_release_channel(struct rpmsg_device *rpdev,
+ 			  struct rpmsg_channel_info *chinfo);
+ /**
+- * rpmsg_chrdev_register_device() - register chrdev device based on rpdev
++ * rpmsg_ctrldev_register_device() - register a char device for control based on rpdev
+  * @rpdev:	prepared rpdev to be used for creating endpoints
+  *
+  * This function wraps rpmsg_register_device() preparing the rpdev for use as
+  * basis for the rpmsg chrdev.
+  */
+-static inline int rpmsg_chrdev_register_device(struct rpmsg_device *rpdev)
++static inline int rpmsg_ctrldev_register_device(struct rpmsg_device *rpdev)
+ {
+-	strcpy(rpdev->id.name, "rpmsg_chrdev");
+-	rpdev->driver_override = "rpmsg_chrdev";
++	strcpy(rpdev->id.name, "rpmsg_ctrl");
++	rpdev->driver_override = "rpmsg_ctrl";
+ 
+ 	return rpmsg_register_device(rpdev);
+ }
+diff --git a/drivers/rpmsg/virtio_rpmsg_bus.c b/drivers/rpmsg/virtio_rpmsg_bus.c
+index ac764e04c898..3ede25b1f2e4 100644
+--- a/drivers/rpmsg/virtio_rpmsg_bus.c
++++ b/drivers/rpmsg/virtio_rpmsg_bus.c
+@@ -849,7 +849,7 @@ static struct rpmsg_device *rpmsg_virtio_add_ctrl_dev(struct virtio_device *vdev
+ 	rpdev_ctrl->dev.release = virtio_rpmsg_release_device;
+ 	rpdev_ctrl->little_endian = virtio_is_little_endian(vrp->vdev);
+ 
+-	err = rpmsg_chrdev_register_device(rpdev_ctrl);
++	err = rpmsg_ctrldev_register_device(rpdev_ctrl);
+ 	if (err) {
+ 		kfree(vch);
+ 		return ERR_PTR(err);
