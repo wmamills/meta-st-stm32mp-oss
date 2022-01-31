@@ -11,7 +11,10 @@ include linux-stm32mp-sign-kernel.inc
 
 SRC_URI += " \
     file://0001-ARM-STM32MP15-support-of-Preemptible-Kernel.patch \
-    "
+           file://0001-tty-rpmsg-Fix-race-condition-releasing-tty-port.patch \
+           file://0002-rpmsg-char-Fix-race-between-the-release-of-rpmsg_ctr.patch \
+           file://0003-rpmsg-char-Fix-race-between-the-release-of-rpmsg_ept.patch \
+           "
 
 PV = "${LINUX_VERSION}"
 
