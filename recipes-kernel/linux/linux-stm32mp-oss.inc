@@ -25,7 +25,8 @@ SRC_URI += " \
            file://0012-rpmsg-char-Add-possibility-to-use-default-endpoint-o.patch \
            file://0013-rpmsg-char-Introduce-the-rpmsg-raw-channel.patch \
            file://0014-rpmsg-ctrl-Introduce-new-RPMSG_CREATE-RELEASE_DEV_IO.patch \
-           "
+           file://0015-usb-dwc2-drd-fix-soft-connect-when-gadget-is-unconfi.patch \
+          "
 
 PV = "${LINUX_VERSION}"
 
