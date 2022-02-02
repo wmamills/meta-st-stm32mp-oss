@@ -26,6 +26,7 @@ SRC_URI += " \
            file://0013-rpmsg-char-Introduce-the-rpmsg-raw-channel.patch \
            file://0014-rpmsg-ctrl-Introduce-new-RPMSG_CREATE-RELEASE_DEV_IO.patch \
            file://0015-usb-dwc2-drd-fix-soft-connect-when-gadget-is-unconfi.patch \
+           file://0016-rpmsg-virtio-overwrite-dst-add-on-ept-callback-if-se.patch \
           "
 
 PV = "${LINUX_VERSION}"
